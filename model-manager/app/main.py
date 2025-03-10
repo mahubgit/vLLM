@@ -1,6 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import shutil
 import os
 from typing import List
@@ -9,16 +10,17 @@ import requests
 
 app = FastAPI(
     title="Model Manager API",
-    description="API for managing LLM models",
-    version="1.0.0"
+    description="API for managing LLM models"
 )
 
 MODELS_DIR = "/models"
 VLLM_HOST = "http://vllm:8000"
 
-@app.get("/", include_in_schema=False)
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return RedirectResponse(url="/docs")
+    return templates.TemplateResponse("index.html", {"request": {}})
 
 # Only mount static files if directory exists
 if os.path.exists("static"):

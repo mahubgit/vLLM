@@ -3,3 +3,5 @@ uvicorn
 python-multipart
 huggingface-hub
 requests
+jinja2
+tqdm
