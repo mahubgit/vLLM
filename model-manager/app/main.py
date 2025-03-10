@@ -52,18 +52,27 @@ async def initialize_model(model_name: str):
         raise HTTPException(status_code=404, detail="Model not found")
     
     try:
+        # Test connection first
+        try:
+            requests.get(f"{VLLM_HOST}/health")
+        except requests.exceptions.ConnectionError:
+            return {"status": "error", "message": "Cannot connect to vLLM service. Please ensure the service is running."}
+
         # Load model using vLLM's API
         response = requests.post(
             f"{VLLM_HOST}/v1/models",
-            json={"name": model_name, "model": model_path}
+            json={"name": model_name, "model": model_path},
+            timeout=10
         )
         
         if response.status_code == 200:
             return {"status": "success", "message": f"Model {model_name} loaded successfully"}
         else:
             return {"status": "error", "message": f"Failed to load model: {response.text}"}
+    except requests.exceptions.Timeout:
+        return {"status": "error", "message": "Request timed out. The model might be too large or the service is busy."}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"Error: {str(e)}"}
 
 @app.get("/models/download-and-initialize/{org_name}/{model_name}")
 async def download_and_initialize_with_org(org_name: str, model_name: str):
