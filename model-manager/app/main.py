@@ -47,16 +47,26 @@ async def download_model(model_id: str):
 async def initialize_model(model_name: str):
     model_path = os.path.join(MODELS_DIR, model_name)
     if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, message="Model not found")
+        raise HTTPException(status_code=404, detail="Model not found")
     
     try:
-        # Notify vLLM to load the model
-        response = requests.post(f"{VLLM_HOST}/v1/models", 
-                               json={"model_path": model_path})
+        # Stop the current vLLM instance
+        requests.post(f"{VLLM_HOST}/v1/models/stop")
+        
+        # Start vLLM with the new model
+        response = requests.post(
+            f"{VLLM_HOST}/v1/models/start",
+            json={
+                "name": model_name,
+                "model": model_path,
+                "tensor_parallel_size": 2
+            }
+        )
+        
         if response.status_code == 200:
             return {"status": "success", "message": f"Model {model_name} initialized"}
         else:
-            return {"status": "error", "message": "Failed to initialize model"}
+            return {"status": "error", "message": f"Failed to initialize model: {response.text}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -66,13 +76,13 @@ async def download_and_initialize(model_id: str):
         # Download the model
         huggingface_hub.snapshot_download(
             repo_id=model_id,
-            local_dir=f"{MODELS_DIR}/{model_id}"
+            local_dir=f"{MODELS_DIR}/{model_id}",
+            token=os.getenv("HF_TOKEN")  # Optional: Add if you need access to gated models
         )
         
         # Initialize the model
-        await initialize_model(model_id)
-        
-        return {"status": "success", "message": f"Model {model_id} downloaded and initialized"}
+        result = await initialize_model(model_id)
+        return result
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
