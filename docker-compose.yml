@@ -29,6 +29,7 @@ services:
       - "8080:8080"
     depends_on:
       - vllm
+    restart: unless-stopped
 
   model-manager:
     build: ./model-manager
