@@ -52,12 +52,16 @@ async def initialize_model(model_name: str):
         raise HTTPException(status_code=404, detail="Model not found")
     
     try:
-        # Instead of trying to stop/start, just check if vLLM is responding
-        response = requests.get(f"{VLLM_HOST}/v1/models")
+        # Load model using vLLM's API
+        response = requests.post(
+            f"{VLLM_HOST}/v1/models",
+            json={"name": model_name, "model": model_path}
+        )
+        
         if response.status_code == 200:
-            return {"status": "success", "message": f"vLLM service is ready for model {model_name}"}
+            return {"status": "success", "message": f"Model {model_name} loaded successfully"}
         else:
-            return {"status": "error", "message": "Failed to connect to vLLM service"}
+            return {"status": "error", "message": f"Failed to load model: {response.text}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -115,3 +119,14 @@ async def delete_model(model_name: str):
         shutil.rmtree(model_path)
         return {"status": "success", "message": f"Model {model_name} deleted successfully"}
     return {"status": "error", "message": "Model not found"}
+
+
+@app.get("/models/current")
+async def get_current_model():
+    try:
+        response = requests.get(f"{VLLM_HOST}/v1/models")
+        if response.status_code == 200:
+            return {"status": "success", "model": response.json()}
+        return {"status": "error", "model": None}
+    except:
+        return {"status": "error", "model": None}
