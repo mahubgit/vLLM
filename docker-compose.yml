@@ -6,7 +6,7 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - MODEL_PATH=/models/default-model
+      - MODEL_PATH=/models/mistral-7b-instruct-v0.2  # Using a specific model name
       - GPU_COUNT=2
     volumes:
       - ./models:/models
