@@ -28,27 +28,13 @@ services:
       retries: 3
       start_period: 120s
 
-  model-manager:
-    build: ./model-manager
-    environment:
-      - HF_TOKEN=${HF_TOKEN}
-      - TGI_HOST=http://tgi:80
-    volumes:
-      - ./models:/models
-    ports:
-      - "8081:8081"
-    networks:
-      - tgi-network
-    depends_on:
-      tgi:
-        condition: service_healthy
-    restart: unless-stopped
-
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     environment:
       - OPENAI_API_BASE=http://tgi:80/v1
       - OPENAI_API_KEY=not-needed
+      - ENDPOINTS=http://tgi:80/v1
+      - DEFAULT_ENDPOINT=http://tgi:80/v1
     ports:
       - "8080:8080"
     depends_on:
