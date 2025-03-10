@@ -9,7 +9,9 @@ app = FastAPI()
 
 MODELS_DIR = "/models"
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Only mount static files if directory exists
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/models")
 async def list_models():
