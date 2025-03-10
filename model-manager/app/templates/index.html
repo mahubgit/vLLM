@@ -27,8 +27,10 @@
             <div class="card-body">
                 <form id="downloadForm">
                     <div class="mb-3">
-                        <label class="form-label">Model ID (e.g., organization/model-name)</label>
-                        <input type="text" class="form-control" id="modelId" required>
+                        <label class="form-label">Model ID (format: organization/model-name)</label>
+                        <input type="text" class="form-control" id="modelId" required 
+                               placeholder="Example: TinyLlama/TinyLlama-1.1B-Chat-v1.0">
+                        <div class="form-text">Enter the complete model path including organization name</div>
                     </div>
                     <div class="progress mb-3 d-none" id="progressBar">
                         <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -87,11 +89,12 @@
                 // Split model ID if it contains organization
                 const parts = modelId.split('/');
                 let url = '/models/download-and-initialize/';
-                if (parts.length > 1) {
-                    url += `${parts[0]}/${parts[1]}`;
-                } else {
-                    url += modelId;
+                
+                // Handle model ID format
+                if (parts.length === 1) {
+                    throw new Error('Please enter the model ID in the format: organization/model-name');
                 }
+                url += `${parts[0]}/${parts.slice(1).join('/')}`;
                 
                 const response = await fetch(url);
                 const data = await response.json();
