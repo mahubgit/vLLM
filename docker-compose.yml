@@ -14,37 +14,27 @@ services:
     command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000"]
     networks:
       - vllm-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  openwebui:
-    build: ./openwebui
-    environment:
-      - OPENAI_API_BASE=http://vllm:8000/v1
-      - OPENAI_API_KEY=not-needed
-    ports:
-      - "8080:8080"
-    depends_on:
-      - vllm
-    restart: unless-stopped
-    networks:
-      - vllm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   model-manager:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
+      - VLLM_HOST=http://vllm:8000
     volumes:
       - ./models:/models
     ports:
       - "8081:8081"
     networks:
       - vllm-network
+    depends_on:
+      vllm:
+        condition: service_healthy
+    restart: unless-stopped
 
 networks:
   vllm-network:

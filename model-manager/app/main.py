@@ -101,27 +101,39 @@ async def download_and_initialize_with_org(org_name: str, model_name: str):
 @app.get("/models/current")
 async def get_current_model():
     try:
-        response = requests.get(f"{VLLM_HOST}/v1/models")
+        response = requests.get(f"{VLLM_HOST}/v1/models/info")  # Changed endpoint to /models/info
         if response.status_code == 200:
-            model_info = response.json()
-            if isinstance(model_info, dict) and "model" in model_info:
-                return {"status": "success", "model": {"name": model_info["model"]}}
-            return {"status": "success", "model": model_info}
+            data = response.json()
+            return {"status": "success", "model": {"name": data.get("model_name", "Unknown")}}
         return {"status": "error", "model": None}
     except Exception as e:
         return {"status": "error", "model": None, "message": str(e)}
 
-# Remove or simplify the initialize_model endpoint since we're not using it
 @app.post("/models/initialize/{model_name}")
 async def initialize_model(model_name: str):
     model_path = os.path.join(MODELS_DIR, model_name)
     if not os.path.exists(model_path):
         raise HTTPException(status_code=404, detail="Model not found")
     
-    return {
-        "status": "success",
-        "message": f"Model {model_name} exists. To use it, update vLLM configuration and restart the service."
-    }
+    try:
+        # Restart vLLM with new model
+        response = requests.post(
+            f"{VLLM_HOST}/v1/model/load",  # Changed endpoint to /model/load
+            json={
+                "model_name": model_name,
+                "model_path": model_path
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return {"status": "success", "message": f"Model {model_name} loaded successfully"}
+        else:
+            return {"status": "error", "message": f"Failed to load model: {response.text}"}
+    except requests.exceptions.ConnectionError:
+        return {"status": "error", "message": "Cannot connect to vLLM service. Please check if the service is running."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # Keep the original endpoint for models without organization
 @app.get("/models/download-and-initialize/{model_id}")
