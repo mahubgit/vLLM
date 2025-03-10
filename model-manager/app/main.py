@@ -72,10 +72,24 @@ async def download_and_initialize_with_org(org_name: str, model_name: str):
             token=os.getenv("HF_TOKEN")
         )
         
-        # Just return success after download
-        return {"status": "success", "message": f"Model {model_id} downloaded successfully. Please restart vLLM service to use the new model."}
+        return {
+            "status": "success", 
+            "message": f"Model {model_id} downloaded successfully. To use this model:\n1. Update the vLLM service model path in docker-compose.yml\n2. Restart vLLM with: docker-compose restart vllm"
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+# Remove or simplify the initialize_model endpoint since we're not using it
+@app.post("/models/initialize/{model_name}")
+async def initialize_model(model_name: str):
+    model_path = os.path.join(MODELS_DIR, model_name)
+    if not os.path.exists(model_path):
+        raise HTTPException(status_code=404, detail="Model not found")
+    
+    return {
+        "status": "success",
+        "message": f"Model {model_name} exists. To use it, update vLLM configuration and restart the service."
+    }
 
 # Keep the original endpoint for models without organization
 @app.get("/models/download-and-initialize/{model_id}")
