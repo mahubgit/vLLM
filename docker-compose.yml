@@ -11,7 +11,7 @@ services:
     volumes:
       - ./models:/models
     ports:
-      - "8000:8000"
+      - "8082:8000"  # Changed from 8000:8000 to 8082:8000
     deploy:
       resources:
         reservations:
@@ -32,7 +32,7 @@ services:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
-      - TGI_HOST=http://tgi:8000
+      - TGI_HOST=http://tgi:8000  # This stays the same as it's internal
     volumes:
       - ./models:/models
     ports:
@@ -47,7 +47,7 @@ services:
   openwebui:
     build: ./openwebui
     environment:
-      - OPENAI_API_BASE=http://tgi:8000/v1
+      - OPENAI_API_BASE=http://tgi:8000/v1  # This stays the same as it's internal
       - OPENAI_API_KEY=not-needed
     ports:
       - "8080:8080"
