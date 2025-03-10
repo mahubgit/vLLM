@@ -5,6 +5,7 @@ import os
 import huggingface_hub
 import requests
 import json
+import time
 
 app = FastAPI(
     title="Model Manager API",
@@ -35,9 +36,25 @@ async def initialize_model(model_name: str):
     
     try:
         # Load model using TGI's API
+        headers = {"Content-Type": "application/json"}
         response = requests.post(
-            f"{TGI_HOST}/model/load",
-            json={"model_id": model_path}
+            f"{TGI_HOST}/unload",  # First unload current model
+            headers=headers
+        )
+        
+        # Wait a moment for unload to complete
+        time.sleep(2)
+        
+        # Load the new model
+        response = requests.post(
+            f"{TGI_HOST}/load",
+            headers=headers,
+            json={
+                "model_id": model_path,
+                "max_batch_size": 32,
+                "max_input_length": 2048,
+                "max_total_tokens": 4096
+            }
         )
         
         if response.status_code == 200:
