@@ -1,6 +1,9 @@
 #!/bin/bash
-python3 -m vllm.entrypoints.openai.api_server \
-    --model $MODEL_PATH \
-    --host 0.0.0.0 \
+
+# Start vLLM server with required arguments
+exec python3 -m vllm.entrypoints.openai.api_server \
+    --host "0.0.0.0" \
     --port 8000 \
-    --tensor-parallel-size $GPU_COUNT
+    --model "/models/TinyLlama-1.1B-Chat-v1.0" \
+    --trust-remote-code \
+    --dtype auto
