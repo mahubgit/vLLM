@@ -70,6 +70,24 @@ async def initialize_model(model_name: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.get("/models/download-and-initialize/{org_name}/{model_name}")
+async def download_and_initialize_with_org(org_name: str, model_name: str):
+    try:
+        model_id = f"{org_name}/{model_name}"
+        # Download the model
+        huggingface_hub.snapshot_download(
+            repo_id=model_id,
+            local_dir=f"{MODELS_DIR}/{model_name}",  # Use only model_name for local storage
+            token=os.getenv("HF_TOKEN")
+        )
+        
+        # Initialize the model
+        result = await initialize_model(model_name)  # Pass only model_name
+        return result
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# Keep the original endpoint for models without organization
 @app.get("/models/download-and-initialize/{model_id}")
 async def download_and_initialize(model_id: str):
     try:
@@ -77,7 +95,7 @@ async def download_and_initialize(model_id: str):
         huggingface_hub.snapshot_download(
             repo_id=model_id,
             local_dir=f"{MODELS_DIR}/{model_id}",
-            token=os.getenv("HF_TOKEN")  # Optional: Add if you need access to gated models
+            token=os.getenv("HF_TOKEN")
         )
         
         # Initialize the model
