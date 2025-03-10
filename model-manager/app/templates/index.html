@@ -72,43 +72,46 @@
         }
 
         // Download model with progress
-        document.getElementById('downloadForm').onsubmit = function(e) {
+        document.getElementById('downloadForm').onsubmit = async function(e) {
             e.preventDefault();
             const modelId = document.getElementById('modelId').value;
             const progressBar = document.getElementById('progressBar');
             const progressBarInner = progressBar.querySelector('.progress-bar');
+            const submitButton = this.querySelector('button[type="submit"]');
             
             progressBar.classList.remove('d-none');
             progressBarInner.style.width = '0%';
+            submitButton.disabled = true;
             
-            fetch(`/models/download-and-initialize/${modelId}`)
-                .then(response => {
-                    const reader = response.body.getReader();
-                    return new ReadableStream({
-                        start(controller) {
-                            return pump();
-                            function pump() {
-                                return reader.read().then(({done, value}) => {
-                                    if (done) {
-                                        controller.close();
-                                        return;
-                                    }
-                                    controller.enqueue(value);
-                                    return pump();
-                                });
-                            }
-                        }
-                    });
-                })
-                .then(() => {
-                    progressBar.classList.add('d-none');
-                    alert('Model downloaded and initialized successfully');
-                    loadModels();
-                })
-                .catch(error => {
-                    progressBar.classList.add('d-none');
-                    alert('Error: ' + error);
-                });
+            try {
+                // Split model ID if it contains organization
+                const parts = modelId.split('/');
+                let url = '/models/download-and-initialize/';
+                if (parts.length > 1) {
+                    url += `${parts[0]}/${parts[1]}`;
+                } else {
+                    url += modelId;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    progressBarInner.style.width = '100%';
+                    setTimeout(() => {
+                        progressBar.classList.add('d-none');
+                        alert(data.message);
+                        loadModels();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progressBar.classList.add('d-none');
+            } finally {
+                submitButton.disabled = false;
+            }
         };
 
         // Initial load
