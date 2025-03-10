@@ -11,7 +11,7 @@ services:
       - ./models:/models
     ports:
       - "8000:8000"
-    command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000", "--model", "/models/TinyLlama-1.1B-Chat-v1.0"]
     networks:
       - vllm-network
     deploy:

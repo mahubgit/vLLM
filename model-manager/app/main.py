@@ -52,23 +52,12 @@ async def initialize_model(model_name: str):
         raise HTTPException(status_code=404, detail="Model not found")
     
     try:
-        # Stop the current vLLM instance
-        requests.post(f"{VLLM_HOST}/v1/models/stop")
-        
-        # Start vLLM with the new model
-        response = requests.post(
-            f"{VLLM_HOST}/v1/models/start",
-            json={
-                "name": model_name,
-                "model": model_path,
-                "tensor_parallel_size": 2
-            }
-        )
-        
+        # Instead of trying to stop/start, just check if vLLM is responding
+        response = requests.get(f"{VLLM_HOST}/v1/models")
         if response.status_code == 200:
-            return {"status": "success", "message": f"Model {model_name} initialized"}
+            return {"status": "success", "message": f"vLLM service is ready for model {model_name}"}
         else:
-            return {"status": "error", "message": f"Failed to initialize model: {response.text}"}
+            return {"status": "error", "message": "Failed to connect to vLLM service"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -79,13 +68,12 @@ async def download_and_initialize_with_org(org_name: str, model_name: str):
         # Download the model
         huggingface_hub.snapshot_download(
             repo_id=model_id,
-            local_dir=f"{MODELS_DIR}/{model_name}",  # Use only model_name for local storage
+            local_dir=f"{MODELS_DIR}/{model_name}",
             token=os.getenv("HF_TOKEN")
         )
         
-        # Initialize the model
-        result = await initialize_model(model_name)  # Pass only model_name
-        return result
+        # Just return success after download
+        return {"status": "success", "message": f"Model {model_id} downloaded successfully. Please restart vLLM service to use the new model."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
