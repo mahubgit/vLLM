@@ -1,13 +1,15 @@
 import gradio as gr
-import openai
+from openai import OpenAI
 import os
 
-openai.api_base = os.getenv("OPENAI_API_BASE", "http://vllm:8000/v1")
-openai.api_key = os.getenv("OPENAI_API_KEY", "not-needed")
+client = OpenAI(
+    api_key="not-needed",
+    base_url=os.getenv("OPENAI_API_BASE", "http://vllm:8000/v1")
+)
 
 def generate_response(message):
     try:
-        completion = openai.ChatCompletion.create(
+        completion = client.chat.completions.create(
             model="local-model",
             messages=[{"role": "user", "content": message}]
         )
