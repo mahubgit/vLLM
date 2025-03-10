@@ -6,8 +6,8 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - MODEL_ID=TinyLlama/TinyLlama-1.1B-Chat-v1.0
-    command: ["--model-id", "TinyLlama/TinyLlama-1.1B-Chat-v1.0"]
+      - MODEL_ID=facebook/opt-125m
+    command: ["--model-id", "facebook/opt-125m", "--max-input-length", "1024", "--max-total-tokens", "2048"]
     volumes:
       - ./models:/data
     ports:
@@ -23,31 +23,20 @@ services:
       - tgi-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   model-manager:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
-      - TGI_HOST=http://tgi:8000  # This stays the same as it's internal
-    volumes:
-      - ./models:/models
-    ports:
-      - "8081:8081"
-    networks:
-      - tgi-network
-    depends_on:
-      tgi:
-        condition: service_healthy
-    restart: unless-stopped
+      - TGI_HOST=http://tgi:80
 
   openwebui:
-    build: ./openwebui
     environment:
-      - OPENAI_API_BASE=http://tgi:8000/v1  # This stays the same as it's internal
+      - OPENAI_API_BASE=http://tgi:80/v1
       - OPENAI_API_KEY=not-needed
     ports:
       - "8080:8080"
