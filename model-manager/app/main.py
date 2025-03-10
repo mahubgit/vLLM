@@ -1,12 +1,10 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-import shutil
 import os
-from typing import List
 import huggingface_hub
 import requests
+import json
 
 app = FastAPI(
     title="Model Manager API",
@@ -14,97 +12,17 @@ app = FastAPI(
 )
 
 MODELS_DIR = "/models"
-VLLM_HOST = "http://vllm:8000"
+TGI_HOST = os.getenv("TGI_HOST", "http://tgi:8000")
 
 templates = Jinja2Templates(directory="templates")
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return templates.TemplateResponse("index.html", {"request": {}})
-
-# Only mount static files if directory exists
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/models")
-async def list_models():
-    models = []
-    for item in os.listdir(MODELS_DIR):
-        if os.path.isdir(os.path.join(MODELS_DIR, item)):
-            models.append({"name": item})
-    return models
-
-@app.post("/models/download/{model_id}")
-async def download_model(model_id: str):
-    try:
-        huggingface_hub.snapshot_download(
-            repo_id=model_id,
-            local_dir=f"{MODELS_DIR}/{model_id}"
-        )
-        return {"status": "success", "message": f"Model {model_id} downloaded successfully"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@app.post("/models/initialize/{model_name}")
-async def initialize_model(model_name: str):
-    model_path = os.path.join(MODELS_DIR, model_name)
-    if not os.path.exists(model_path):
-        raise HTTPException(status_code=404, detail="Model not found")
-    
-    try:
-        # Test connection first
-        try:
-            requests.get(f"{VLLM_HOST}/health")
-        except requests.exceptions.ConnectionError:
-            return {"status": "error", "message": "Cannot connect to vLLM service. Please ensure the service is running."}
-
-        # Load model using vLLM's API
-        response = requests.post(
-            f"{VLLM_HOST}/v1/models",
-            json={"name": model_name, "model": model_path},
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            return {"status": "success", "message": f"Model {model_name} loaded successfully"}
-        else:
-            return {"status": "error", "message": f"Failed to load model: {response.text}"}
-    except requests.exceptions.Timeout:
-        return {"status": "error", "message": "Request timed out. The model might be too large or the service is busy."}
-    except Exception as e:
-        return {"status": "error", "message": f"Error: {str(e)}"}
-
-@app.get("/models/download-and-initialize/{org_name}/{model_name}")
-async def download_and_initialize_with_org(org_name: str, model_name: str):
-    try:
-        model_id = f"{org_name}/{model_name}"
-        # Download the model
-        huggingface_hub.snapshot_download(
-            repo_id=model_id,
-            local_dir=f"{MODELS_DIR}/{model_name}",
-            token=os.getenv("HF_TOKEN")
-        )
-        
-        # Try to initialize the model
-        try:
-            result = await initialize_model(model_name)
-            if result["status"] == "success":
-                return {"status": "success", "message": f"Model {model_id} downloaded and loaded successfully"}
-            else:
-                return {"status": "success", "message": f"Model downloaded but failed to load: {result['message']}"}
-        except Exception as e:
-            return {"status": "success", "message": f"Model downloaded successfully but failed to load: {str(e)}"}
-            
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
 
 @app.get("/models/current")
 async def get_current_model():
     try:
-        response = requests.get(f"{VLLM_HOST}/v1/models/info")  # Changed endpoint to /models/info
+        response = requests.get(f"{TGI_HOST}/info")
         if response.status_code == 200:
             data = response.json()
-            return {"status": "success", "model": {"name": data.get("model_name", "Unknown")}}
+            return {"status": "success", "model": {"name": data.get("model_id", "Unknown")}}
         return {"status": "error", "model": None}
     except Exception as e:
         return {"status": "error", "model": None, "message": str(e)}
@@ -116,46 +34,15 @@ async def initialize_model(model_name: str):
         raise HTTPException(status_code=404, detail="Model not found")
     
     try:
-        # Restart vLLM with new model
+        # Load model using TGI's API
         response = requests.post(
-            f"{VLLM_HOST}/v1/model/load",  # Changed endpoint to /model/load
-            json={
-                "model_name": model_name,
-                "model_path": model_path
-            },
-            timeout=30
+            f"{TGI_HOST}/model/load",
+            json={"model_id": model_path}
         )
         
         if response.status_code == 200:
             return {"status": "success", "message": f"Model {model_name} loaded successfully"}
         else:
             return {"status": "error", "message": f"Failed to load model: {response.text}"}
-    except requests.exceptions.ConnectionError:
-        return {"status": "error", "message": "Cannot connect to vLLM service. Please check if the service is running."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-# Keep the original endpoint for models without organization
-@app.get("/models/download-and-initialize/{model_id}")
-async def download_and_initialize(model_id: str):
-    try:
-        # Download the model
-        huggingface_hub.snapshot_download(
-            repo_id=model_id,
-            local_dir=f"{MODELS_DIR}/{model_id}",
-            token=os.getenv("HF_TOKEN")
-        )
-        
-        # Initialize the model
-        result = await initialize_model(model_id)
-        return result
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@app.delete("/models/{model_name}")
-async def delete_model(model_name: str):
-    model_path = os.path.join(MODELS_DIR, model_name)
-    if os.path.exists(model_path):
-        shutil.rmtree(model_path)
-        return {"status": "success", "message": f"Model {model_name} deleted successfully"}
-    return {"status": "error", "message": "Model not found"}

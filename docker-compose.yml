@@ -1,21 +1,28 @@
 version: '3.8'
 
 services:
-  vllm:
-    build: ./vllm
+  tgi:
+    image: ghcr.io/huggingface/text-generation-inference:latest
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - GPU_COUNT=2
+      - CUDA_VISIBLE_DEVICES=0,1
+      - NUM_SHARD=2
     volumes:
       - ./models:/models
     ports:
       - "8000:8000"
-    command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
     networks:
-      - vllm-network
+      - tgi-network
     healthcheck:
-      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/models')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,20 +32,33 @@ services:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
-      - VLLM_HOST=http://vllm:8000
+      - TGI_HOST=http://tgi:8000
     volumes:
       - ./models:/models
     ports:
       - "8081:8081"
     networks:
-      - vllm-network
+      - tgi-network
     depends_on:
-      vllm:
+      tgi:
         condition: service_healthy
     restart: unless-stopped
 
+  openwebui:
+    build: ./openwebui
+    environment:
+      - OPENAI_API_BASE=http://tgi:8000/v1
+      - OPENAI_API_KEY=not-needed
+    ports:
+      - "8080:8080"
+    depends_on:
+      - tgi
+    restart: unless-stopped
+    networks:
+      - tgi-network
+
 networks:
-  vllm-network:
+  tgi-network:
     driver: bridge
 
 volumes:
