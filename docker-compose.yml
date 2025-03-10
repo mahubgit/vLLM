@@ -11,14 +11,6 @@ services:
       - ./models:/models
     ports:
       - "8000:8000"
-    command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   openwebui:
     build: ./openwebui
@@ -32,6 +24,8 @@ services:
 
   model-manager:
     build: ./model-manager
+    environment:
+      - HF_TOKEN=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
     volumes:
       - ./models:/models
     ports:
