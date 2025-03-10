@@ -12,6 +12,8 @@ services:
     ports:
       - "8000:8000"
     command: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--host", "0.0.0.0", "--port", "8000"]
+    networks:
+      - vllm-network
     deploy:
       resources:
         reservations:
@@ -30,6 +32,8 @@ services:
     depends_on:
       - vllm
     restart: unless-stopped
+    networks:
+      - vllm-network
 
   model-manager:
     build: ./model-manager
@@ -39,6 +43,12 @@ services:
       - ./models:/models
     ports:
       - "8081:8081"
+    networks:
+      - vllm-network
+
+networks:
+  vllm-network:
+    driver: bridge
 
 volumes:
   models:
