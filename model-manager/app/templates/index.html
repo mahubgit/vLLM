@@ -59,12 +59,26 @@
                 .then(data => {
                     const currentModel = document.getElementById('currentModel');
                     if (data.status === 'success' && data.model) {
-                        currentModel.innerHTML = `
-                            <strong>Active Model:</strong> ${data.model.name || 'None'}
-                        `;
+                        if (data.model.name) {
+                            currentModel.innerHTML = `
+                                <strong>Active Model:</strong> ${data.model.name}
+                                <div class="text-success mt-2">
+                                    <i class="bi bi-check-circle"></i> Model is loaded and ready
+                                </div>
+                            `;
+                        } else {
+                            currentModel.innerHTML = '<em>No model currently loaded</em>';
+                        }
                     } else {
-                        currentModel.innerHTML = '<em>No model currently loaded</em>';
+                        currentModel.innerHTML = `
+                            <em>Unable to get current model status</em>
+                            ${data.message ? `<div class="text-danger small mt-2">${data.message}</div>` : ''}
+                        `;
                     }
+                })
+                .catch(error => {
+                    const currentModel = document.getElementById('currentModel');
+                    currentModel.innerHTML = `<em class="text-danger">Error checking model status: ${error}</em>`;
                 });
         }
 

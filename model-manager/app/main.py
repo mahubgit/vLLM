@@ -85,12 +85,31 @@ async def download_and_initialize_with_org(org_name: str, model_name: str):
             token=os.getenv("HF_TOKEN")
         )
         
-        return {
-            "status": "success", 
-            "message": f"Model {model_id} downloaded successfully. To use this model:\n1. Update the vLLM service model path in docker-compose.yml\n2. Restart vLLM with: docker-compose restart vllm"
-        }
+        # Try to initialize the model
+        try:
+            result = await initialize_model(model_name)
+            if result["status"] == "success":
+                return {"status": "success", "message": f"Model {model_id} downloaded and loaded successfully"}
+            else:
+                return {"status": "success", "message": f"Model downloaded but failed to load: {result['message']}"}
+        except Exception as e:
+            return {"status": "success", "message": f"Model downloaded successfully but failed to load: {str(e)}"}
+            
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.get("/models/current")
+async def get_current_model():
+    try:
+        response = requests.get(f"{VLLM_HOST}/v1/models")
+        if response.status_code == 200:
+            model_info = response.json()
+            if isinstance(model_info, dict) and "model" in model_info:
+                return {"status": "success", "model": {"name": model_info["model"]}}
+            return {"status": "success", "model": model_info}
+        return {"status": "error", "model": None}
+    except Exception as e:
+        return {"status": "error", "model": None, "message": str(e)}
 
 # Remove or simplify the initialize_model endpoint since we're not using it
 @app.post("/models/initialize/{model_name}")
@@ -128,14 +147,3 @@ async def delete_model(model_name: str):
         shutil.rmtree(model_path)
         return {"status": "success", "message": f"Model {model_name} deleted successfully"}
     return {"status": "error", "message": "Model not found"}
-
-
-@app.get("/models/current")
-async def get_current_model():
-    try:
-        response = requests.get(f"{VLLM_HOST}/v1/models")
-        if response.status_code == 200:
-            return {"status": "success", "model": response.json()}
-        return {"status": "error", "model": None}
-    except:
-        return {"status": "error", "model": None}
