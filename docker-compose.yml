@@ -5,12 +5,20 @@ services:
     build: ./vllm
     runtime: nvidia
     environment:
+      - NVIDIA_VISIBLE_DEVICES=all
       - MODEL_PATH=/models/default-model
       - GPU_COUNT=2
     volumes:
       - ./models:/models
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   openwebui:
     build: ./openwebui
