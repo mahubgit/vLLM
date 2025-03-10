@@ -33,7 +33,7 @@ services:
   model-manager:
     build: ./model-manager
     environment:
-      - HF_TOKEN=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
+      - HF_TOKEN=${HF_TOKEN}
     volumes:
       - ./models:/models
     ports:
