@@ -7,11 +7,13 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - MODEL_ID=facebook/opt-125m
-    command: ["--model-id", "facebook/opt-125m", "--max-input-length", "1024", "--max-total-tokens", "2048"]
+    environment:
+      - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.2-fr
+    command: ["--model-id", "mistralai/Mistral-7B-Instruct-v0.2-fr", "--max-input-length", "2048", "--max-total-tokens", "4096"]
     volumes:
       - ./models:/data
     ports:
-      - "8082:80"
+      - "8081:80"  # TGI API and OpenAI endpoint
     deploy:
       resources:
         reservations:
@@ -36,7 +38,7 @@ services:
       - ENDPOINTS=http://tgi:80/v1
       - DEFAULT_ENDPOINT=http://tgi:80/v1
     ports:
-      - "8080:8080"
+      - "8080:8080"  # OpenWebUI interface
     depends_on:
       - tgi
     restart: unless-stopped
