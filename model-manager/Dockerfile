@@ -11,8 +11,11 @@ RUN pip install -r requirements.txt
 # Create necessary directories
 RUN mkdir -p static
 
-# Copy the application files
-COPY app/* .
+# Copy the application files correctly
+COPY app/. .
+
+# Create health endpoint file
+RUN echo '{"status": "ok"}' > static/health.json
 
 # Set the working directory
 WORKDIR /app

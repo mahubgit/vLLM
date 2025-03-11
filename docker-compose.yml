@@ -81,6 +81,8 @@ services:
       - OPENAI_API_KEY=not-needed
       - SERVER_HOST=0.0.0.0
       - ENDPOINTS=http://localhost:8081/v1
+      - DEFAULT_MODEL=mistralai/Mistral-7B-Instruct-v0.3
+      - CHAT_TEMPLATES_PATH=/data/templates
     volumes:
       - ./data:/data
     ports:

@@ -1,0 +1,4 @@
+{
+  "template": "<s>[INST] {prompt} [/INST]",
+  "chat_template": "<s>{{#each messages}}{{#ifEqual role \"user\"}}<s>[INST] {{content}} [/INST]{{/ifEqual}}{{#ifEqual role \"assistant\"}}{{content}}</s>{{/ifEqual}}{{/each}}"
+}

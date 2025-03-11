@@ -29,6 +29,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to mount static files: {e}")
 
+# Ajoutez cet endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
