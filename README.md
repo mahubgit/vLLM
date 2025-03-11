@@ -32,6 +32,7 @@ SERVICES
 Text Generation Inference (TGI)
 - Port: 8081 
 - API: http://localhost:8081/v1
+- Health: http://localhost:8081/health
 - Configuration optimisée:
   * Sharding sur 2 GPUs
   * Batch processing optimisé
@@ -40,13 +41,15 @@ Text Generation Inference (TGI)
 
 Gestionnaire de Modèles
 - Port: 8082
+- URL: http://localhost:8082
+- Health: http://localhost:8082/health
 - API Endpoints:
-  * GET /models - Liste des modèles
-  * POST /models/download/{model_id} - Téléchargement
-  * DELETE /models/{model_name} - Suppression
-  * POST /api/load-model/{model_name} - Chargement
-  * GET /api/current-model - Modèle actif
-  * GET /api/config - Configuration actuelle
+  * GET http://localhost:8082/models - Liste des modèles
+  * POST http://localhost:8082/models/download/{model_id} - Téléchargement
+  * DELETE http://localhost:8082/models/{model_name} - Suppression
+  * POST http://localhost:8082/api/load-model/{model_name} - Chargement
+  * GET http://localhost:8082/api/current-model - Modèle actif
+  * GET http://localhost:8082/api/config - Configuration actuelle
 
 OpenWebUI
 - Port: 8080
@@ -72,3 +75,18 @@ PERFORMANCES
 - Configuration optimisée pour les RTX A5000
 
 Note: Le premier téléchargement d'un modèle peut prendre plusieurs minutes selon votre connexion internet.
+
+TROUBLESHOOTING
+
+1. Service Health Checks:
+   - TGI: http://localhost:8081/health
+   - Model Manager: http://localhost:8082/health
+   - OpenWebUI: http://localhost:8080
+
+2. View Logs:
+   docker-compose logs -f
+
+3. Common Issues:
+   - If model-manager shows wrong port, check PORT environment variable
+   - If TGI shows "Unknown compute for card", this is normal for RTX A5000
+   - First model load may take several minutes

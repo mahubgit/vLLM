@@ -14,7 +14,8 @@ services:
       "--max-batch-total-tokens", "12288",
       "--max-concurrent-requests", "64",
       "--cuda-memory-fraction", "0.95",
-      "--hostname", "0.0.0.0"
+      "--hostname", "0.0.0.0",
+      "--port", "80"
     ]
     volumes:
       - ./models:/data/models
@@ -22,6 +23,10 @@ services:
       - "8081:80"
     networks:
       - ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      retries: 3
 
   model-manager:
     build: ./model-manager
@@ -29,7 +34,7 @@ services:
       - HF_TOKEN=${HF_TOKEN}
       - TGI_HOST=http://tgi:80
       - MODEL_PATH=/models
-      - DEFAULT_MODEL=mistralai/Mistral-7B-Instruct-v0.3
+      - PORT=8082
     volumes:
       - ./models:/models
     ports:
@@ -38,19 +43,12 @@ services:
       - ai-network
     depends_on:
       - tgi
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     environment:
-      - OPENAI_API_BASE=http://tgi:80/v1
+      - OPENAI_API_BASE=http://localhost:8081/v1
       - OPENAI_API_KEY=not-needed
-      - ENDPOINTS=http://tgi:80/v1
-      - DEFAULT_ENDPOINT=http://tgi:80/v1
       - SERVER_HOST=0.0.0.0
     ports:
       - "8080:8080"
