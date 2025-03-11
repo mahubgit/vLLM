@@ -9,10 +9,12 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Create necessary directories
-RUN mkdir -p app/static
+RUN mkdir -p static
 
-COPY app/ app/
+# Copy the application files
+COPY app/* .
+
+# Set the working directory
 WORKDIR /app
-ENV PYTHONPATH=/app
 
 CMD ["python", "main.py"]
