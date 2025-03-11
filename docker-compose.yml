@@ -6,12 +6,14 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.3
       - HF_TOKEN=${HF_TOKEN}
     command: [
-      "--model-id", "mistralai/Mistral-7B-Instruct-v0.3",
-      "--max-input-length", "2048",
-      "--max-total-tokens", "4096",
+      "--sharded", "true",
+      "--num-shard", "2",
+      "--max-batch-prefill-tokens", "2048",
+      "--max-batch-total-tokens", "12288",
+      "--max-concurrent-requests", "64",
+      "--cuda-memory-fraction", "0.95",
       "--hostname", "0.0.0.0"
     ]
     volumes:
@@ -27,6 +29,7 @@ services:
       - HF_TOKEN=${HF_TOKEN}
       - TGI_HOST=http://tgi:80
       - MODEL_PATH=/models
+      - DEFAULT_MODEL=mistralai/Mistral-7B-Instruct-v0.3
     volumes:
       - ./models:/models
     ports:

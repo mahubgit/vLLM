@@ -2,11 +2,6 @@ TGI Model Manager with OpenWebUI
 
 Solution intégrée combinant Text Generation Inference (TGI) avec une interface de gestion des modèles et OpenWebUI.
 
-PRÉREQUIS
-- Docker avec support NVIDIA
-- Token Hugging Face (pour télécharger les modèles)
-- NVIDIA GPU avec au moins 12GB de VRAM
-
 ARCHITECTURE
 
 .
@@ -17,61 +12,63 @@ ARCHITECTURE
 │   ├── Dockerfile
 │   ├── requirements.txt   # Dépendances Python
 │   └── app/
-│       ├── main.py       # Application FastAPI
-│       └── static/       # Interface utilisateur
-│           └── index.html
+│       └── main.py       # Application FastAPI
+
+CARACTÉRISTIQUES
+
+- Multi-GPU optimisé (2x RTX A5000)
+- Chargement automatique des modèles existants
+- Configuration optimisée pour les performances
+- Interface de gestion des modèles
+- Persistance des modèles
+
+CONFIGURATION MATÉRIELLE RECOMMANDÉE
+- 2x NVIDIA RTX A5000 (24GB chacune)
+- 64GB+ RAM recommandé
+- SSD pour le stockage des modèles
 
 SERVICES
 
 Text Generation Inference (TGI)
 - Port: 8081 
 - API: http://localhost:8081/v1
-- Rôle: Service d'inférence avec API compatible OpenAI
-- Santé: http://localhost:8081/health
-- Volume: ./models:/data/models (persistance des modèles)
+- Configuration optimisée:
+  * Sharding sur 2 GPUs
+  * Batch processing optimisé
+  * Utilisation mémoire GPU: 95%
+  * Requêtes concurrentes: 64
 
 Gestionnaire de Modèles
 - Port: 8082
-- URL: http://localhost:8082
-- Rôle: Interface de gestion des modèles
-- Fonctionnalités:
-  * Liste des modèles disponibles
-  * Téléchargement de nouveaux modèles
-  * Chargement/déchargement des modèles
-  * Suppression des modèles
-  * Indication du modèle actif
-- Volume: ./models:/models (accès aux modèles)
+- API Endpoints:
+  * GET /models - Liste des modèles
+  * POST /models/download/{model_id} - Téléchargement
+  * DELETE /models/{model_name} - Suppression
+  * POST /api/load-model/{model_name} - Chargement
+  * GET /api/current-model - Modèle actif
+  * GET /api/config - Configuration actuelle
 
 OpenWebUI
 - Port: 8080
 - URL: http://localhost:8080
-- Rôle: Interface de chat
-
-CONFIGURATION
-
-Variables d'Environnement (.env):
-- HF_TOKEN: Token Hugging Face pour le téléchargement des modèles
 
 DÉMARRAGE
 
-1. Créer le fichier .env:
+1. Configuration:
    echo HF_TOKEN=votre_token > .env
 
-2. Créer les dossiers nécessaires:
-   mkdir models
-
-3. Démarrer les services:
+2. Démarrage:
    docker-compose up -d
 
-4. Accéder aux interfaces:
-   - Gestion des modèles: http://localhost:8082
-   - Interface de chat: http://localhost:8080
+3. Interfaces:
+   - Gestion: http://localhost:8082
+   - Chat: http://localhost:8080
 
-UTILISATION
+PERFORMANCES
 
-1. Ouvrir l'interface de gestion (http://localhost:8082)
-2. Télécharger un modèle en utilisant son ID Hugging Face
-3. Charger le modèle souhaité
-4. Utiliser l'interface de chat (http://localhost:8080)
+- Chargement rapide grâce au multi-GPU
+- Modèles persistants entre redémarrages
+- Démarrage automatique avec modèles existants
+- Configuration optimisée pour les RTX A5000
 
-Note: Le premier téléchargement de modèle peut prendre plusieurs minutes selon votre connexion internet.
+Note: Le premier téléchargement d'un modèle peut prendre plusieurs minutes selon votre connexion internet.
