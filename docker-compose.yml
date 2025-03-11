@@ -15,14 +15,22 @@ services:
     ]
     ports:
       - "8081:80"
+    networks:
+      - tgi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     environment:
-      - OPENAI_API_BASE=http://localhost:8081/v1
+      - OPENAI_API_BASE=http://tgi:80/v1
       - OPENAI_API_KEY=not-needed
-      - ENDPOINTS=http://localhost:8081/v1
-      - DEFAULT_ENDPOINT=http://localhost:8081/v1
+      - ENDPOINTS=http://tgi:80/v1
+      - DEFAULT_ENDPOINT=http://tgi:80/v1
       - SERVER_HOST=0.0.0.0
     ports:
       - "8080:8080"  # OpenWebUI interface
