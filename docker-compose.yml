@@ -10,8 +10,7 @@ services:
     command: [
       "--model-id", "mistralai/Mistral-7B-Instruct-v0.2-fr",
       "--max-input-length", "2048",
-      "--max-total-tokens", "4096",
-      "--cors-allow-origin", "*"
+      "--max-total-tokens", "4096"
     ]
     ports:
       - "8081:80"
