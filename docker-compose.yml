@@ -8,7 +8,6 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - HF_TOKEN=${HF_TOKEN}
     command: [
-      "--model-id", "mistralai/Mistral-7B-Instruct-v0.3",
       "--sharded", "true",
       "--num-shard", "2",
       "--max-batch-prefill-tokens", "2048",
@@ -24,10 +23,18 @@ services:
     ports:
       - "8081:80"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     networks:
       - ai-network
 
