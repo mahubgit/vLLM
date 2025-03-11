@@ -10,16 +10,21 @@ services:
     command: [
       "--sharded", "true",
       "--num-shard", "2",
-      "--max-batch-prefill-tokens", "2048",
-      "--max-batch-total-tokens", "12288",
+      "--max-batch-prefill-tokens", "2047",  # Adjusted based on logs
+      "--max-batch-total-tokens", "2048",    # Adjusted based on logs
       "--max-concurrent-requests", "64",
       "--cuda-memory-fraction", "0.95",
       "--hostname", "0.0.0.0",
-      "--port", "80"
+      "--port", "80",
+      "--max-input-length", "2047",          # Added based on logs
+      "--max-total-tokens", "2048",          # Added based on logs
+      "--disable-custom-kernels", "false",   # Explicitly set
+      "--trust-remote-code", "false"         # Security setting
     ]
     volumes:
       - ./models:/data/models
       - ./.cache:/data/cache
+      - ./.huggingface:/root/.cache/huggingface  # Added for token persistence
     ports:
       - "8081:80"
     healthcheck:
