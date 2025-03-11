@@ -3,87 +3,67 @@
 <head>
     <title>Model Manager</title>
     <style>
-        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .model-card { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .model-item { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
         .current { background-color: #e6ffe6; }
-        button { margin: 5px; }
     </style>
 </head>
 <body>
     <h1>Model Manager</h1>
-    
     <div>
-        <h2>Add New Model</h2>
-        <input type="text" id="modelId" placeholder="huggingface-org/model-name">
-        <button onclick="downloadModel()">Download</button>
+        <h2>Current Model</h2>
+        <div id="currentModel"></div>
     </div>
-
     <div>
         <h2>Available Models</h2>
         <div id="modelsList"></div>
     </div>
-
     <script>
-        let currentModel = '';
-
         async function loadModels() {
-            const response = await fetch('/models');
-            const models = await response.json();
-            const currentResponse = await fetch('/api/current-model');
-            const currentModelInfo = await currentResponse.json();
-            currentModel = currentModelInfo.model;
-            
-            const modelsList = document.getElementById('modelsList');
-            modelsList.innerHTML = '';
-            
-            models.forEach(model => {
-                const div = document.createElement('div');
-                div.className = `model-card ${model === currentModel ? 'current' : ''}`;
-                div.innerHTML = `
-                    <h3>${model}</h3>
-                    <button onclick="loadModel('${model}')" ${model === currentModel ? 'disabled' : ''}>
-                        ${model === currentModel ? 'Currently Loaded' : 'Load Model'}
-                    </button>
-                    <button onclick="deleteModel('${model}')" ${model === currentModel ? 'disabled' : ''}>Delete</button>
-                `;
-                modelsList.appendChild(div);
-            });
-        }
-
-        async function downloadModel() {
-            const modelId = document.getElementById('modelId').value;
             try {
-                await fetch(`/models/download/${modelId}`, { method: 'POST' });
-                loadModels();
-            } catch (error) {
-                alert('Error downloading model');
+                const [modelsResponse, currentResponse] = await Promise.all([
+                    fetch('/models'),
+                    fetch('/api/current-model')
+                ]);
+                const models = await modelsResponse.json();
+                const current = await currentResponse.json();
+                
+                document.getElementById('currentModel').innerHTML = 
+                    `<div class="model-item current">${current.model || 'None'}</div>`;
+                
+                document.getElementById('modelsList').innerHTML = 
+                    models.map(model => `
+                        <div class="model-item">
+                            ${model}
+                            <button onclick="loadModel('${model}')">Load</button>
+                            <button onclick="deleteModel('${model}')">Delete</button>
+                        </div>
+                    `).join('');
+            } catch (e) {
+                console.error('Error:', e);
             }
         }
 
-        async function loadModel(modelName) {
+        async function loadModel(name) {
             try {
-                await fetch(`/api/load-model/${modelName}`, { method: 'POST' });
+                await fetch(`/api/load-model/${name}`, {method: 'POST'});
                 loadModels();
-            } catch (error) {
-                alert('Error loading model');
+            } catch (e) {
+                console.error('Error:', e);
             }
         }
 
-        async function deleteModel(modelName) {
-            if (confirm(`Delete model ${modelName}?`)) {
-                try {
-                    await fetch(`/models/${modelName}`, { method: 'DELETE' });
-                    loadModels();
-                } catch (error) {
-                    alert('Error deleting model');
-                }
+        async function deleteModel(name) {
+            try {
+                await fetch(`/models/${name}`, {method: 'DELETE'});
+                loadModels();
+            } catch (e) {
+                console.error('Error:', e);
             }
         }
 
-        // Initial load
         loadModels();
-        // Refresh every 30 seconds
-        setInterval(loadModels, 30000);
+        setInterval(loadModels, 5000);
     </script>
 </body>
 </html>

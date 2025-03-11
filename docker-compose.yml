@@ -8,6 +8,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - HF_TOKEN=${HF_TOKEN}
     command: [
+      "--model-id", "mistralai/Mistral-7B-Instruct-v0.3",
       "--sharded", "true",
       "--num-shard", "2",
       "--max-batch-prefill-tokens", "2048",
@@ -19,8 +20,14 @@ services:
     ]
     volumes:
       - ./models:/data/models
+      - ./.cache:/data/cache
     ports:
       - "8081:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - ai-network
 
@@ -28,31 +35,40 @@ services:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
-      - TGI_HOST=http://tgi:80  # Internal network address
+      - TGI_HOST=http://tgi:80
       - MODEL_PATH=/models
-      - PORT=8082  # Explicitly set port
+      - PORT=8082
     volumes:
       - ./models:/models
     ports:
-      - "8082:8082"  # Fixed port mapping
+      - "8082:8082"
+    depends_on:
+      tgi:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - ai-network
-    depends_on:
-      - tgi
 
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     environment:
-      - OPENAI_API_BASE=http://tgi:80/v1  # Internal network address
+      - OPENAI_API_BASE=http://tgi:80/v1
       - OPENAI_API_KEY=not-needed
       - SERVER_HOST=0.0.0.0
-      - ENDPOINTS=http://localhost:8081/v1  # External address for UI
+      - ENDPOINTS=http://localhost:8081/v1
+    volumes:
+      - ./data:/data
     ports:
       - "8080:8080"
+    depends_on:
+      tgi:
+        condition: service_healthy
     networks:
       - ai-network
-    depends_on:
-      - tgi
 
 networks:
   ai-network:
