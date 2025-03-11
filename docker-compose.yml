@@ -11,32 +11,11 @@ services:
     command: [
       "--model-id", "mistralai/Mistral-7B-Instruct-v0.3",
       "--max-input-length", "2048",
-      "--max-total-tokens", "4096"
+      "--max-total-tokens", "4096",
+      "--hostname", "0.0.0.0"
     ]
     ports:
       - "8081:80"
-    networks:
-      - tgi-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
-
-  openwebui:
-    image: ghcr.io/open-webui/open-webui:main
-    environment:
-      - OPENAI_API_BASE=http://tgi:80/v1
-      - OPENAI_API_KEY=not-needed
-      - ENDPOINTS=http://tgi:80/v1
-      - DEFAULT_ENDPOINT=http://tgi:80/v1
-      - SERVER_HOST=0.0.0.0
-    ports:
-      - "8080:8080"  # OpenWebUI interface
-    depends_on:
-      - tgi
-    restart: unless-stopped
     networks:
       - tgi-network
 
