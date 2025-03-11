@@ -149,9 +149,13 @@ async def delete_model(model_name: str):
 PORT = int(os.getenv("PORT", "8082"))
 
 # Update the startup logging
+# Add at the top with other imports
+import uvicorn
+
+# After app initialization
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    port = int(os.getenv("PORT", "8082"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
 

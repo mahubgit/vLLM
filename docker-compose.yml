@@ -23,22 +23,18 @@ services:
       - "8081:80"
     networks:
       - ai-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      retries: 3
 
   model-manager:
     build: ./model-manager
     environment:
       - HF_TOKEN=${HF_TOKEN}
-      - TGI_HOST=http://tgi:80
+      - TGI_HOST=http://tgi:80  # Internal network address
       - MODEL_PATH=/models
-      - PORT=8082
+      - PORT=8082  # Explicitly set port
     volumes:
       - ./models:/models
     ports:
-      - "8082:8082"
+      - "8082:8082"  # Fixed port mapping
     networks:
       - ai-network
     depends_on:
@@ -47,9 +43,10 @@ services:
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
     environment:
-      - OPENAI_API_BASE=http://localhost:8081/v1
+      - OPENAI_API_BASE=http://tgi:80/v1  # Internal network address
       - OPENAI_API_KEY=not-needed
       - SERVER_HOST=0.0.0.0
+      - ENDPOINTS=http://localhost:8081/v1  # External address for UI
     ports:
       - "8080:8080"
     networks:
