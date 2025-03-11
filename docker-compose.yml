@@ -7,20 +7,29 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - HF_TOKEN=${HF_TOKEN}
-    command: [
-      "--sharded", "true",
-      "--num-shard", "2",
-      "--max-batch-prefill-tokens", "2047",  # Adjusted based on logs
-      "--max-batch-total-tokens", "2048",    # Adjusted based on logs
-      "--max-concurrent-requests", "64",
-      "--cuda-memory-fraction", "0.95",
-      "--hostname", "0.0.0.0",
-      "--port", "80",
-      "--max-input-length", "2047",          # Added based on logs
-      "--max-total-tokens", "2048",          # Added based on logs
-      "--disable-custom-kernels", "false",   # Explicitly set
-      "--trust-remote-code", "false"         # Security setting
-    ]
+    command:
+      - --sharded
+      - "true"
+      - --num-shard
+      - "2"
+      - --max-batch-prefill-tokens
+      - "2047"
+      - --max-batch-total-tokens
+      - "2048"
+      - --max-concurrent-requests
+      - "64"
+      - --cuda-memory-fraction
+      - "0.95"
+      - --hostname
+      - "0.0.0.0"
+      - --port
+      - "80"
+      - --max-input-length
+      - "2047"
+      - --max-total-tokens
+      - "2048"
+      - --disable-custom-kernels
+      - --trust-remote-code
     volumes:
       - ./models:/data/models
       - ./.cache:/data/cache
