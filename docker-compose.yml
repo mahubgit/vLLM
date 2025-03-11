@@ -14,14 +14,43 @@ services:
       "--max-total-tokens", "4096",
       "--hostname", "0.0.0.0"
     ]
+    volumes:
+      - ./models:/data/models
     ports:
       - "8081:80"
     networks:
-      - tgi-network
+      - ai-network
+
+  model-manager:
+    build: ./model-manager
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - TGI_HOST=http://tgi:80
+      - MODEL_PATH=/models
+    volumes:
+      - ./models:/models
+    ports:
+      - "8082:8082"
+    networks:
+      - ai-network
+    depends_on:
+      - tgi
+
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    environment:
+      - OPENAI_API_BASE=http://tgi:80/v1
+      - OPENAI_API_KEY=not-needed
+      - ENDPOINTS=http://tgi:80/v1
+      - DEFAULT_ENDPOINT=http://tgi:80/v1
+      - SERVER_HOST=0.0.0.0
+    ports:
+      - "8080:8080"
+    networks:
+      - ai-network
+    depends_on:
+      - tgi
 
 networks:
-  tgi-network:
+  ai-network:
     driver: bridge
-
-volumes:
-  models:
