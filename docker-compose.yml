@@ -7,12 +7,11 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.2-fr
-      - CORS_ALLOW_ORIGINS=*
     command: [
       "--model-id", "mistralai/Mistral-7B-Instruct-v0.2-fr",
       "--max-input-length", "2048",
       "--max-total-tokens", "4096",
-      "--cors-allow-origins", "*"
+      "--cors-allow-origin", "*"
     ]
     ports:
       - "8081:80"
