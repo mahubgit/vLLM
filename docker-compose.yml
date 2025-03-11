@@ -6,8 +6,6 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - MODEL_ID=facebook/opt-125m
-    environment:
       - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.2-fr
     command: ["--model-id", "mistralai/Mistral-7B-Instruct-v0.2-fr", "--max-input-length", "2048", "--max-total-tokens", "4096"]
     volumes:
