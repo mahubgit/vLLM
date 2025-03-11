@@ -7,6 +7,7 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.2-fr
+      - HF_TOKEN=${HF_TOKEN}
     command: [
       "--model-id", "mistralai/Mistral-7B-Instruct-v0.2-fr",
       "--max-input-length", "2048",
