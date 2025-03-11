@@ -1,7 +1,8 @@
 fastapi
 uvicorn
+httpx
+huggingface_hub
 python-multipart
-huggingface-hub
 requests
 jinja2
 tqdm

@@ -35,6 +35,11 @@ services:
       - ai-network
     depends_on:
       - tgi
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   openwebui:
     image: ghcr.io/open-webui/open-webui:main
